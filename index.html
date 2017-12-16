@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="Generator" content="EditPlus®">
+  <meta name="Author" content="">
+  <meta name="Keywords" content="">
+  <meta name="Description" content="">
+  <title>别踩白块</title>
+  <style>
+	*{
+		margin: 0;
+		padding: 0;
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	body {
+		background: purple;
+	}
+	.white-block {
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		width: 400px;
+		height: 600px;
+		margin: auto;
+		background: rgba(0,0,0,0.6);
+		overflow: hidden;
+	}
+	.begin-game-btn {
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		margin: auto;
+		width: 100px;
+		height: 45px;
+		font-size: 20px;
+		line-height:45px;
+		letter-spacing: 2px;
+	}
+    .replay-game-btn {
+
+    }
+	.begin-game-btn:hover {
+		cursor: pointer;
+	}
+	.container {
+		position: absolute;
+        /*=== ===*/
+		top: -120px;
+		width: 100%;
+		height: auto;
+
+	}
+	.row {
+		width: 100%;
+	}
+	.row  a {
+		display: block;
+		width: 25%;
+		height: 120px;
+		background: white;
+		float: left;
+        border-bottom: 1px solid black;
+	}
+	.row  a + a {
+		border-left: 1px solid black;
+	}
+	.hidden {
+		display: none;
+	}
+
+    /*===清除浮动产生的影响===*/
+	.clearfix:before,
+	.clearfix:after {
+		content: '';
+		display: block;
+		clear: both;
+		width: 0;
+		height: 0;
+	}
+  </style>
+ </head>
+ <body>
+  <div class="white-block">
+	<div class="container" id="mainWrap"></div>
+	<button id="beginGame" class="begin-game-btn">开始游戏</button>
+  </div>
+  <script>
+  //全局变量
+
+  //存储颜色的数组
+  var colors = ['blue', 'red', 'orange', 'green'],
+
+      //定时器
+      timer = -1,
+
+      //速度
+	  speed = 5,
+
+      //分数
+	  score = 0,
+
+      //主要对象
+      mainWrapObj = document.getElementById('mainWrap');
+
+      //点击a标签的处理函数
+      function handleAclick(e){
+            var cName = e.target.className;
+
+            e.stopPropagation();
+            if( cName == 'js-white-block'){
+                console.log('为啥会弹出多次呢？');
+                endGame();
+
+            } else {
+                if(cName.indexOf('js-other-block') != -1){
+                   e.target.style.backgroundColor = 'black';
+                   e.target.className = '';
+                   calcScore();
+                   changeSpeed();
+                }
+
+            }
+     }
+
+  //开始游戏
+  function beginGame(){
+        //debugger; //开启调试bug
+        //速度
+        speed = 5;
+
+        //分数
+        score = 0;
+        createDivElement();
+		move();
+
+        mainWrapObj.removeEventListener('clcik', handleAclick);
+		//给块绑定事件
+		mainWrapObj.addEventListener('click', handleAclick, false);
+
+  }
+
+  //结束游戏
+  function endGame() {
+      //如何判断游戏结束
+      //1、当有一个不是白色的块移动到看不到的地方时候，说明我们漏了一个块，游戏自动结束。
+
+      //2、当我们点击了一个白色的块，游戏也应该结束。
+      if(timer != -1){
+          clearInterval(timer);
+      }
+
+      alert('game over!your score:' + score);
+      mainWrapObj.innerHTML = '';
+      document.getElementById('beginGame').style.display = 'block';
+  }
+
+  //计分
+  function calcScore() {
+     ++score;
+  }
+
+  //改变速度
+  function changeSpeed() {
+      if(score % 10 === 0) {
+         speed++;
+      }
+  }
+
+  //运动
+  function move() {
+	var whiteBlock = document.getElementsByClassName('white-block')[0];
+
+    //定时器任务。每隔一段时间就移动div
+	timer = setInterval(function(){
+
+	  var top =	mainWrapObj.offsetTop,
+
+          step = top + speed;
+
+          //移动mainWrap元素
+          mainWrapObj.setAttribute("style", "top:" + step + "px");
+
+          //创建元素并追加到dom里面
+          if(step >= 0){
+              createDivElement();
+              mainWrapObj.setAttribute("style","top: -120px");
+
+               //当mainWrapObj的高度大于外层的容器的高度的两个块时，将最后一行的div移除(防止dom节点无限增加)
+              if(mainWrapObj.clientHeight >= whiteBlock.clientHeight + 120*2){
+                for(var i = 0; i < 4; i++){
+                    var parentLastElement = mainWrapObj.lastElementChild;
+                    if(parentLastElement.childNodes[i].className.indexOf('js-other-block') != -1){
+                            endGame();
+                            break;
+                    }
+
+                };
+                mainWrapObj.removeChild(mainWrapObj.lastElementChild);
+              }
+          }
+
+
+	},50);
+  }
+
+  //创建div
+  function createDivElement() {
+      var divElement = document.createElement('div'),
+          fragment = document.createDocumentFragment();
+
+          divElement.setAttribute('class', 'row clearfix');
+
+          //四个里面三个是白块，只有一个是其他颜色的块
+          var randomNum = randomNumber();
+          for (var i = 0; i < 4; i++ ) {
+                aElement = document.createElement('a');
+                aElement.setAttribute('href', 'javascript:void(0);');
+                if(randomNum === i){
+                    aElement.style.backgroundColor = colors[i];
+                    aElement.setAttribute('class', 'js-other-block');
+                } else {
+                    aElement.setAttribute('class', 'js-white-block');
+                }
+
+                fragment.appendChild(aElement);
+          }
+
+          divElement.appendChild(fragment);
+
+          if(mainWrapObj.childNodes.length > 0){
+
+                //在当前父元素的第一个子元素前添加这个div进去
+               mainWrapObj.insertBefore(divElement, mainWrapObj.childNodes[0]);
+
+            } else {
+
+               //如果当前父元素的子元素为空，则直接追加到父元素里面;
+               mainWrapObj.appendChild(divElement);
+              }
+
+  }
+
+  //获取随机数
+  function randomNumber() {
+
+      return Math.floor(Math.random() * colors.length);
+
+  }
+
+  //初始化
+  function init() {
+
+
+
+     //给开始游戏按钮绑定事件
+	 var beginGameObj = document.getElementById('beginGame');
+     function handleBegin(e) {
+        e.stopPropagation();
+         this.style.display = 'none';
+         beginGame();
+
+     }
+     beginGameObj.removeEventListener('click', handleBegin);
+	 beginGameObj.addEventListener('click', handleBegin, false);
+  }
+
+  //重玩
+  function replay() {
+
+
+  }
+
+  //销毁方法
+  function destory(){
+
+  }
+
+
+
+  init();
+  /*
+  有一个点我没get到，就是创建div的时机不对，应该当第一行的div离它父元素的距离接近于它自身的高度时候，再创建div
+   */
+
+  </script>
+ </body>
+</html>
